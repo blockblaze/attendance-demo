@@ -4,6 +4,28 @@
     "slug": "attendance-demo",
     "version": "1.0.0",
     "platforms": ["android", "ios"],
-    "jsEngine": "hermes"
+    "jsEngine": "hermes",
+    "android": {
+      "package": "com.anonymous.attendancedemo"
+    },
+    "ios": {
+      "bundleIdentifier": "com.anonymous.attendancedemo"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "65fbf81d-606a-4b61-8d6e-78a1b8405f81"
+      }
+    },
+    "plugins": [
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ]
   }
 }

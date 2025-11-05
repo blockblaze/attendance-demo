@@ -1,13 +1,13 @@
-import dgram from 'react-native-udp';
 import 'react-native-get-random-values';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { io } from 'socket.io-client';
-import { Barcode } from 'expo-barcode-generator';
+import Barcode from '@kichiyaki/react-native-barcode-generator';
 import * as Network from 'expo-network';
 import { signJWT } from './jwt';
 
 const SECRET = '123';
+const PORT = 3000;
 
 export default function App() {
   const [studentId, setStudentId] = useState('');
@@ -15,28 +15,43 @@ export default function App() {
   const [token, setToken] = useState(null);
   const [timer, setTimer] = useState(0);
   const [scanned, setScanned] = useState(false);
-  const [localIp, setLocalIp] = useState(null);
   const [serverUrl, setServerUrl] = useState(null);
+  const [searching, setSearching] = useState(false);
 
-
-// 🔍 Discover local server automatically
-useEffect(() => {
-  const socket = dgram.createSocket('udp4');
-  socket.bind(41234);
-
-  socket.on('message', (msg) => {
+  // 🔍 Scan local network for server
+  const discoverServer = async () => {
+    setSearching(true);
     try {
-      const data = JSON.parse(msg.toString());
-      const url = `http://${data.ip}:${data.port}`;
-      console.log('📡 Discovered server:', url);
-      setServerUrl(url);
-    } catch (e) {
-      console.warn('Invalid UDP message:', msg.toString());
-    }
-  });
+      const ip = await Network.getIpAddressAsync();
+      const subnet = ip.split('.').slice(0, 3).join('.');
+      console.log('📡 Scanning subnet:', subnet);
 
-  return () => socket.close();
-}, []);
+      for (let i = 1; i <= 254; i++) {
+        const target = `http://${subnet}.${i}:${PORT}/api/health`;
+        try {
+          const res = await fetch(target, { timeout: 500 });
+          const json = await res.json();
+          if (json.ok) {
+            console.log('✅ Server found at:', target);
+            setServerUrl(`http://${subnet}.${i}:${PORT}`);
+            setSearching(false);
+            return;
+          }
+        } catch (_) {}
+      }
+
+      Alert.alert('⚠️ Server not found', 'Make sure your phone and server are on the same Wi-Fi.');
+    } catch (e) {
+      console.warn('Network error:', e);
+      Alert.alert('⚠️ Network Error', e.message);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  useEffect(() => {
+    discoverServer();
+  }, []);
 
   // Timer countdown
   useEffect(() => {
@@ -53,16 +68,11 @@ useEffect(() => {
     const id = Number(studentId);
     if (!id) return Alert.alert('⚠️ Invalid ID', 'Please enter a valid student ID.');
 
-    if (!localIp) {
-      return Alert.alert('⚠️ Network Error', 'Unable to detect local IP. Make sure Wi-Fi is on.');
+    if (!serverUrl) {
+      return Alert.alert('⚠️ Server Not Found', 'Waiting to discover the local server...');
     }
 
-if (!serverUrl) {
-  return Alert.alert('⚠️ Server Not Found', 'Waiting to discover the local server...');
-}
-
-const backendUrl = serverUrl;
-
+    const backendUrl = serverUrl;
     console.log('🔌 Connecting to:', backendUrl);
 
     const sock = io(backendUrl, { transports: ['websocket'] });
@@ -87,7 +97,7 @@ const backendUrl = serverUrl;
         const payload = {
           userId: id,
           token: data.token,
-          exp: Math.floor(Date.now() / 1000) + 300, // 5 minutes expiry
+          exp: Math.floor(Date.now() / 1000) + 300,
         };
         const signed = await signJWT(payload, SECRET);
         sock.emit('submit_challenge', signed);
@@ -99,9 +109,9 @@ const backendUrl = serverUrl;
     });
 
     sock.on('success', (data) => {
-    setToken(data.token)
+      setToken(data.token);
       console.log('🎉 Success:', data);
-      setTimer(300); // 5 minutes
+      setTimer(300);
       Alert.alert('🎉 Success', 'Attendance started. Your barcode is now active.');
     });
 
@@ -118,7 +128,6 @@ const backendUrl = serverUrl;
     });
   };
 
-  // Format timer (mm:ss)
   const formatTime = (t) => {
     const m = Math.floor(t / 60);
     const s = t % 60;
@@ -128,6 +137,17 @@ const backendUrl = serverUrl;
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🎓 Attendly Demo</Text>
+
+      {searching && (
+        <View style={{ marginVertical: 10 }}>
+          <ActivityIndicator color="#ff6600" />
+          <Text style={{ color: '#aaa', marginTop: 8 }}>Scanning local network...</Text>
+        </View>
+      )}
+
+      {serverUrl && (
+        <Text style={{ color: '#0f0', marginBottom: 10 }}>✅ Connected to {serverUrl}</Text>
+      )}
 
       <TextInput
         style={styles.input}
@@ -146,14 +166,9 @@ const backendUrl = serverUrl;
         {token && (
           <View style={styles.barcodeWrapper}>
             <Barcode
-              value={token}
+              value={token.toString()}
               format="CODE128"
-              options={{
-                width: 2,
-                height: 100,
-                background: '#fff',
-                lineColor: '#000',
-              }}
+              options={{ width: 2, height: 100, background: '#fff', lineColor: '#000' }}
             />
             <Text style={styles.barcodeText}>⏳ Expires in {formatTime(timer)}</Text>
           </View>
