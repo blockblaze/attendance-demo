@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,56 +11,58 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
-export default function LoginScreen() {
-  const passwordAnim = useRef(new Animated.Value(0)).current;
+export default function LoginScreen({ goToAttend }) {
+  const passwordAnim = React.useRef(new Animated.Value(0)).current;
   const [showPassword, setShowPassword] = useState(false);
+  const [password, setPassword] = useState("");
 
   const handleEmailSubmit = () => {
     setShowPassword(true);
-
     Animated.timing(passwordAnim, {
       toValue: 1,
-      duration: 450,
+      duration: 500,
       useNativeDriver: true,
     }).start();
   };
 
+  const handleLogin = () => {
+    if (password.trim() !== "") {
+      goToAttend();
+    } else {
+      alert("Please enter a password");
+    }
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: "#03050A" }}>
+    <View style={{ flex: 1, backgroundColor: "#050c1f" }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.container}
       >
-        {}
         <LinearGradient
-          colors={["#03050A", "#050A14", "#081427"]}
+          colors={["#050c1f", "#08142e", "#0a1b3f"]}
           style={styles.background}
         />
 
-        {}
         <View style={styles.softLight1} />
         <View style={styles.softLight2} />
 
-        {}
         <View style={styles.headerContainer}>
-          <Text style={styles.header}>Attendly System</Text>
+          <Text style={styles.header}>Attendly-System</Text>
           <Text style={styles.title}>Student Login</Text>
-          <Text style={styles.subtitle}>Access your class dashboard</Text>
+          <Text style={styles.subtitle}>Access your class</Text>
         </View>
 
-        {}
         <View style={styles.card}>
           <Text style={styles.label}>Email / Phone</Text>
-
           <TextInput
             style={styles.input}
-            placeholder="Email/phone"
-            placeholderTextColor="rgba(255,255,255,0.45)"
+            placeholder="Enter your email or phone"
+            placeholderTextColor="rgba(217, 235, 216, 0.35)"
             returnKeyType="next"
             onSubmitEditing={handleEmailSubmit}
           />
 
-          {}
           {showPassword && (
             <Animated.View
               style={{
@@ -69,7 +71,7 @@ export default function LoginScreen() {
                   {
                     translateY: passwordAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [20, 0], // slide up
+                      outputRange: [30, 0],
                     }),
                   },
                 ],
@@ -78,16 +80,18 @@ export default function LoginScreen() {
               <Text style={styles.label}>Password</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Your password"
+                placeholder="Enter your password"
                 secureTextEntry
-                placeholderTextColor="rgba(255,255,255,0.45)"
+                placeholderTextColor="rgba(255,255,255,0.35)"
+                value={password}
+                onChangeText={setPassword}
               />
             </Animated.View>
           )}
 
-          <TouchableOpacity activeOpacity={0.85}>
+          <TouchableOpacity activeOpacity={0.85} onPress={handleLogin}>
             <LinearGradient
-              colors={["#0A1733", "#112650", "#1A3870"]}
+              colors={["#1d4ed8", "#2563eb", "#3b82f6"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.loginBtn}
@@ -97,7 +101,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <View style={styles.links}>
-            <Text style={styles.link}>Need help? Contact your teacher</Text>
+            <Text style={styles.link}>Need help? Contact </Text>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -106,93 +110,71 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-  },
-
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  background: { flex: 1, position: "absolute", width: "100%", height: "100%" },
+  container: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   softLight1: {
     position: "absolute",
-    width: 320,
-    height: 320,
-    borderRadius: 320,
-    backgroundColor: "#0D1B2E",
+    width: 340,
+    height: 340,
+    borderRadius: 340,
+    backgroundColor: "#0b1f3b",
     opacity: 0.15,
     top: -90,
     right: -120,
   },
   softLight2: {
     position: "absolute",
-    width: 280,
-    height: 280,
-    borderRadius: 280,
-    backgroundColor: "#1B2E5A",
-    opacity: 0.07,
-    bottom: -80,
-    left: -90,
+    width: 300,
+    height: 300,
+    borderRadius: 300,
+    backgroundColor: "#1b2e5a",
+    opacity: 0.08,
+    bottom: -90,
+    left: -100,
   },
 
-  headerContainer: {
-    alignItems: "center",
-    marginBottom: 38,
-  },
-
+  headerContainer: { alignItems: "center", marginBottom: 38 },
   header: {
-    color: "rgba(200,210,255,0.45)",
+    color: "rgba(147,167,226,0.5)",
     fontSize: 14,
     letterSpacing: 1.3,
     fontWeight: "500",
   },
-
   title: {
-    color: "#E8ECFF",
+    color: "#ffffff",
     fontSize: 34,
     fontWeight: "900",
     marginTop: 8,
     letterSpacing: 1,
   },
-
   subtitle: {
-    color: "rgba(220,225,255,0.55)",
+    color: "rgba(190,210,255,0.55)",
     fontSize: 15,
     marginTop: 6,
   },
 
   card: {
     width: "86%",
-    padding: 30,
-    borderRadius: 24,
+    padding: 28,
+    borderRadius: 22,
     backgroundColor: "rgba(255,255,255,0.03)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
-    shadowColor: "#000",
-    shadowOpacity: 0.5,
-    shadowRadius: 26,
-    shadowOffset: { width: 0, height: 14 },
   },
-
   label: {
-    color: "#E3E7F0",
+    color: "#e3e7f0",
     marginTop: 12,
     marginBottom: 6,
     fontWeight: "600",
     fontSize: 15,
     letterSpacing: 0.5,
   },
-
   input: {
-    backgroundColor: "rgba(255,255,255,0.07)",
+    backgroundColor: "rgba(255,255,255,0.06)",
     padding: 15,
     borderRadius: 14,
-    color: "#FFF",
+    color: "#fff",
     marginBottom: 20,
     fontSize: 15,
     borderWidth: 1,
@@ -200,30 +182,16 @@ const styles = StyleSheet.create({
   },
 
   loginBtn: {
-    paddingVertical: 16,
-    borderRadius: 18,
+    paddingVertical: 15,
+    borderRadius: 16,
     alignItems: "center",
-    marginTop: 16,
-    shadowColor: "#1A3870",
-    shadowOpacity: 0.6,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
+    marginTop: 18,
+    shadowColor: "#2563eb",
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
   },
+  loginText: { color: "#fff", fontSize: 18, fontWeight: "800", letterSpacing: 1 },
 
-  loginText: {
-    color: "#EEF2FF",
-    fontSize: 18,
-    fontWeight: "800",
-    letterSpacing: 1,
-  },
-
-  links: {
-    marginTop: 25,
-    alignItems: "center",
-  },
-
-  link: {
-    color: "rgba(200,210,255,0.6)",
-    fontSize: 13,
-  },
-}); 
+  links: { marginTop: 25, alignItems: "center" },
+  link: { color: "rgba(170,190,255,0.6)", fontSize: 13 },
+});
