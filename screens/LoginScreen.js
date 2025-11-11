@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// screens/LoginScreen.js
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -7,17 +8,30 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
   Animated,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import * as SecureStore from "expo-secure-store";
 
-export default function LoginScreen({ goToAttend }) {
-  const passwordAnim = React.useRef(new Animated.Value(0)).current;
-  const [showPassword, setShowPassword] = useState(false);
+export default function LoginScreen({ setIsAuth }) {
+  const passwordAnim = useRef(new Animated.Value(0)).current;
+
+  const [showPasswordField, setShowPasswordField] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [loading, setLoading] = useState(false);
+
   const handleEmailSubmit = () => {
-    setShowPassword(true);
+    if (!email.trim()) {
+      alert("Please enter your email or phone first");
+      return;
+    }
+
+    setShowPasswordField(true);
+
     Animated.timing(passwordAnim, {
       toValue: 1,
       duration: 500,
@@ -25,11 +39,41 @@ export default function LoginScreen({ goToAttend }) {
     }).start();
   };
 
-  const handleLogin = () => {
-    if (password.trim() !== "") {
-      goToAttend();
-    } else {
-      alert("Please enter a password");
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      alert("Email and password are required");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        "https://attendly-server-production.up.railway.app/api/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
+      const data = await response.json();
+
+      if (data.error) {
+        alert(data.error || "Invalid credentials");
+        return;
+      }
+
+      // ✅ Save whole response into SecureStore
+      await SecureStore.setItemAsync("user_token", JSON.stringify(data));
+
+      // ✅ Notify App.js to switch screen immediately
+      setIsAuth(true);
+
+    } catch (error) {
+      console.log("Login error", error);
+      alert("Network error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -54,16 +98,20 @@ export default function LoginScreen({ goToAttend }) {
         </View>
 
         <View style={styles.card}>
+          {/* EMAIL */}
           <Text style={styles.label}>Email / Phone</Text>
           <TextInput
             style={styles.input}
             placeholder="Enter your email or phone"
             placeholderTextColor="rgba(217, 235, 216, 0.35)"
             returnKeyType="next"
+            value={email}
+            onChangeText={setEmail}
             onSubmitEditing={handleEmailSubmit}
           />
 
-          {showPassword && (
+          {/* PASSWORD (animated) */}
+          {showPasswordField && (
             <Animated.View
               style={{
                 opacity: passwordAnim,
@@ -78,30 +126,56 @@ export default function LoginScreen({ goToAttend }) {
               }}
             >
               <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                secureTextEntry
-                placeholderTextColor="rgba(255,255,255,0.35)"
-                value={password}
-                onChangeText={setPassword}
-              />
+
+              <View style={{ position: "relative" }}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your password"
+                  placeholderTextColor="rgba(255,255,255,0.35)"
+                  secureTextEntry={!passwordVisible}
+                  value={password}
+                  onChangeText={setPassword}
+                />
+
+                {/* SHOW / HIDE PASSWORD */}
+                <TouchableOpacity
+                  style={styles.showPassBtn}
+                  onPress={() => setPasswordVisible((p) => !p)}
+                >
+                  <Text style={{ color: "#cdd6ff" }}>
+                    {passwordVisible ? "Hide" : "Show"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </Animated.View>
           )}
 
-          <TouchableOpacity activeOpacity={0.85} onPress={handleLogin}>
+          {/* LOGIN BUTTON */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={handleLogin}
+            disabled={loading}
+          >
             <LinearGradient
-              colors={["#1d4ed8", "#2563eb", "#3b82f6"]}
+              colors={
+                loading
+                  ? ["#1e3a8a", "#1e40af", "#1e3a8a"]
+                  : ["#1d4ed8", "#2563eb", "#3b82f6"]
+              }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.loginBtn}
             >
-              <Text style={styles.loginText}>Join Class</Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.loginText}>Join Class</Text>
+              )}
             </LinearGradient>
           </TouchableOpacity>
 
           <View style={styles.links}>
-            <Text style={styles.link}>Need help? Contact </Text>
+            <Text style={styles.link}>Need help? Contact support</Text>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -179,6 +253,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
+  },
+
+  showPassBtn: {
+    position: "absolute",
+    right: 14,
+    top: 18,
   },
 
   loginBtn: {

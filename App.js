@@ -1,17 +1,38 @@
-import React, { useState } from "react";
+// App.js
+import React, { useEffect, useState } from "react";
+import { View, ActivityIndicator } from "react-native";
+import * as SecureStore from "expo-secure-store";
 import LoginScreen from "./screens/LoginScreen";
 import AttendScreen from "./screens/AttendScreen";
 
 export default function App() {
-  const [screen, setScreen] = useState("login"); 
+  const [isAuth, setIsAuth] = useState(null); // null أثناء التحميل
+  const [loading, setLoading] = useState(true);
 
-  const goToAttend = () => setScreen("attend");
-  const goToLogin = () => setScreen("login");
+  // التحقق من وجود مفاتيح الدخول
+  useEffect(() => {
+    const checkAuth = async () => {
+      // await SecureStore.deleteItemAsync("user_token");
+      console.log(await SecureStore.getItemAsync("user_token"))
+      try {
+        const token = await SecureStore.getItemAsync("user_token");
+        setIsAuth(!!token); // true لو فيه token
+      } catch (error) {
+        console.log("Error checking auth:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
-  return screen === "login" ? (
-    <LoginScreen goToAttend={goToAttend} />
-  ) : (
-    <AttendScreen goToLogin={goToLogin} />
-  );
+  if (loading) {
+    return (
+<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#0066ff" />
+      </View>
+    );
+  }
+
+  return isAuth ? <AttendScreen auth={isAuth}/> : <LoginScreen setIsAuth={setIsAuth}/>;
 }
-
