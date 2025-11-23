@@ -1,21 +1,20 @@
 {
   "expo": {
     "name": "Attendly",
-    "slug": "Attendly",
+    "slug": "attendance-demo",
     "version": "1.0.0",
-    "platforms": ["android", "ios"],
+    "platforms": [
+      "android",
+      "ios"
+    ],
     "jsEngine": "hermes",
-
     "orientation": "portrait",
-
     "icon": "./assets/images/logo.png",
-
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-
     "android": {
       "package": "com.devorify.attendly",
       "adaptiveIcon": {
@@ -23,17 +22,14 @@
         "backgroundColor": "#ffffff"
       }
     },
-
     "ios": {
       "bundleIdentifier": "com.devorify.attendly"
     },
-
     "extra": {
       "eas": {
         "projectId": "65fbf81d-606a-4b61-8d6e-78a1b8405f81"
       }
     },
-
     "plugins": [
       "expo-web-browser",
       [
@@ -44,6 +40,7 @@
           }
         }
       ]
-    ]
+    ],
+    "owner": "blockblaze"
   }
 }
