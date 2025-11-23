@@ -32,6 +32,7 @@ export default function AttendScreen({ setIsAuth }) {
 
   const [serverUrl, setServerUrl] = useState(null);
   const [searching, setSearching] = useState(false);
+  const [serverName, setServerName] = useState(null);
 
   // ✅ Load user data from SecureStore
   useEffect(() => {
@@ -61,7 +62,7 @@ export default function AttendScreen({ setIsAuth }) {
       const subnet = ip.split(".").slice(0, 3).join(".");
 
       for (let i = 1; i <= 254; i++) {
-        const target = `http://${subnet}.${i}:${PORT}/api/health`;
+        const target = `http://${subnet}.${i}:${PORT}/discovery`;
 
         try {
           const controller = new AbortController();
@@ -72,7 +73,9 @@ export default function AttendScreen({ setIsAuth }) {
 
           const json = await res.json();
           if (json.ok) {
+            console.log(json)
             setServerUrl(`http://${subnet}.${i}:${PORT}`);
+            setServerName(json.name || `http://${subnet}.${i}:${PORT}`);
             setSearching(false);
             return;
           }
@@ -150,7 +153,6 @@ export default function AttendScreen({ setIsAuth }) {
       if(data.reason) return Alert.alert(data.reason);
       setToken(data.token);
       setTimer(300);
-      Alert.alert("Attendance Started", "Your barcode is active for 5 minutes.");
     });
 
     // ✅ Attendance scanned by teacher
@@ -214,22 +216,24 @@ export default function AttendScreen({ setIsAuth }) {
       {/* ✅ ATTENDANCE CARD */}
       <View style={styles.card}>
         {token && (
-          <View style={styles.barcodeWrapper}>
-            <View style={styles.barcodeInner}>
-              <Barcode
-                value={token.toString()}
-                format="CODE128"
-                options={{
-                  width: 2,
-                  height: 80,
-                  background: "#071229",
-                  lineColor: "#fff",
-                }}
-              />
-            </View>
+<View style={styles.barcodeWrapper}>
+  <View style={styles.barcodeInner}>
+    <Barcode
+      value={token.toString()}
+      format="CODE128"
+      options={{
+        width: 2.4,        // سماكة الخط
+        height: 90,        // ارتفاع أفضل للماسح
+        background: "#FFFFFF", // خلفية بيضاء صريحة
+        lineColor: "#000000",  // خطوط سوداء فاحمة
+        margin: 20,        // Quiet zone كبيرة
+      }}
+    />
+  </View>
 
-            <Text style={styles.timerText}>{formatTime(timer)}</Text>
-          </View>
+  <Text style={styles.timerText}>{formatTime(timer)}</Text>
+</View>
+
         )}
 
         {!token && !scanned && (
@@ -257,7 +261,7 @@ export default function AttendScreen({ setIsAuth }) {
       )}
 
       {serverUrl && (
-        <Text style={styles.connectedText}>Connected to {serverUrl}</Text>
+        <Text style={styles.connectedText}>Connected to {serverName}</Text>
       )}
     </View>
   );
@@ -314,15 +318,16 @@ const styles = StyleSheet.create({
   },
   checkMark: { color: "#fff", fontSize: 30, fontWeight: "700" },
 
-  barcodeInner: {
-    backgroundColor: "#071229",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    marginBottom: 12,
-    width: "90%",
-    alignItems: "center",
-  },
+barcodeInner: {
+  backgroundColor: "#FFFFFF",   // خلفية الباركود
+  paddingVertical: 20,          // زيادة quiet zone
+  paddingHorizontal: 24,
+  borderRadius: 4,              // بسيط جدًا
+  marginBottom: 12,
+  width: "100%",
+  alignItems: "center",
+},
+
 
   timerText: { color: "#fff", fontSize: 34, fontWeight: "700" },
 
