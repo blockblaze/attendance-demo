@@ -49,7 +49,7 @@ export default function LoginScreen({ setIsAuth }) {
 
     try {
       const response = await fetch(
-        "https://attendly-server-production.up.railway.app/api/login",
+        "https://attendly-cloud-simulation-production.up.railway.app/api/login",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
