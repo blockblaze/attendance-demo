@@ -13,13 +13,13 @@
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "cover",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0A0F1F"
     },
     "android": {
       "package": "com.devorify.attendly",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0A0F1F"
       }
     },
     "ios": {
