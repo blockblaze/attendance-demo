@@ -99,9 +99,6 @@ export default function SessionScreen({ navigate }) {
     if (!socket || !isSockReady) return;
 
     const handleNewClasswork = (newCw) => {
-        console.log("hhhhhhhhhhhh",newCw)
-      console.log("New classwork via socket:", newCw);
-
       const formatted = {
         classwork: {
           id: newCw.id,
@@ -178,6 +175,14 @@ export default function SessionScreen({ navigate }) {
     }
   };
 
+    const handlePreviewSnapshot = ()=>{
+    const classworkId = selectedWork.classwork.id;
+    console.log("AGAIN AND AGAIN",classworkId)
+    setClasswork({id:classworkId});
+          navigate("Snapshot");
+
+  };
+
   const formatDuration = (s) => {
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
@@ -242,6 +247,13 @@ export default function SessionScreen({ navigate }) {
             <TouchableOpacity onPress={handleStartClasswork}>
               <LinearGradient colors={["#1d4ed8", "#3b82f6"]} style={styles.actionBtn}>
                 <Text style={styles.actionText}>Start Classwork</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+                   {isTaken && (
+            <TouchableOpacity onPress={handlePreviewSnapshot}>
+              <LinearGradient colors={["#4ade80", "#60a5fa"]} style={styles.actionBtn}>
+                <Text style={styles.actionText}>View Correction</Text>
               </LinearGradient>
             </TouchableOpacity>
           )}

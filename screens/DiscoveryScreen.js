@@ -68,9 +68,8 @@ useEffect(() => {
       const subnet = ip.split(".").slice(0, 3).join(".");
 
       let found = null;
-
       for (let i = 1; i <= 254; i++) {
-        const url = `http://${subnet}.${i}:${PORT}/discovery`;
+        const url = `http://${subnet}.${i}:${PORT}/api/discovery`;
 
         try {
           const controller = new AbortController();
@@ -165,7 +164,6 @@ useEffect(() => {
 
         const signedToken = signJWT(payload, SECRET);
         setSignedToken(signedToken);
-        console.log(signedToken)
 
         sock.emit("join_attended_session", signedToken);
         setLoadingText("Authenticating...");

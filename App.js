@@ -9,6 +9,10 @@ import { Text, View } from "react-native";
 import { SharedStateProvider } from "./SharedState";  // ← Import here
 import SessionScreen from "./screens/SessionScreen";
 import ClassworkScreen from "./screens/ClassworkScreen";
+import Toast from "react-native-toast-message";
+import ClassworkSnapshotScreen from "./screens/ClassworkSnapshotScreen";
+import * as NavigationBar from "expo-navigation-bar";
+
 
 SplashScreen.preventAutoHideAsync();
 
@@ -16,6 +20,10 @@ export default function App() {
   const [isReady, setIsReady] = useState(false);
   const [currentScreen, setCurrentScreen] = useState("Loading");
 
+useEffect(() => {
+    // Hide navigation bar (Android only) when screen mounts
+    NavigationBar.setVisibilityAsync("hidden");
+  }, []);
   useEffect(() => {
     async function prepare() {
       await new Promise(r => setTimeout(r, 2000));
@@ -26,13 +34,12 @@ export default function App() {
     }
     prepare();
   }, []);
-
   const navigate = (screenName) => setCurrentScreen(screenName);
 
-  if (!isReady) return null;
+  if (!isReady) return <Text>Loading user...</Text>;
 
   return (
-    <SharedStateProvider>   {/* ← Provider moved here */}
+    <SharedStateProvider>
       <View style={{ flex: 1 }}>
         {currentScreen === "Login" && (
           <LoginScreen setIsAuth={() => navigate("Discovery")} />
@@ -55,7 +62,12 @@ export default function App() {
           {currentScreen === "Classwork" && (
           <ClassworkScreen navigate={navigate} />
         )}
+        {currentScreen === "Snapshot" && (
+          <ClassworkSnapshotScreen navigate={navigate} />
+        )}
+
       </View>
+      <Toast/>
     </SharedStateProvider>
   );
 }

@@ -1,4 +1,3 @@
-// screens/ClassworkScreen.js
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -9,36 +8,26 @@ import {
   SafeAreaView,
   Alert,
   Dimensions,
+  Modal,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Icon from "react-native-vector-icons/Feather";
 import { useSharedState } from "../SharedState";
+import ImageViewer from "react-native-image-zoom-viewer"; // ← New import
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 export default function ClassworkScreen({ navigate }) {
   const { classwork, serverUrl, signedToken } = useSharedState();
-
-//   // If no classwork → show error
-//   if (!classwork || !classwork.questions) {
-//     return (
-//       <View style={styles.center}>
-//         <Text style={styles.errorText}>No classwork loaded.</Text>
-//         <TouchableOpacity onPress={() => navigate("Session")} style={styles.backBtn}>
-//           <Text style={{ color: "#60a5fa" }}>← Back to Session</Text>
-//         </TouchableOpacity>
-//       </View>
-//     );
-//   }
-
+  const [isFullImage, setIsFullImage] = useState(false);
   const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [timer, setTimer] = useState(classwork.duration);
+  const [timer, setTimer] = useState(classwork?.duration || 0);
   const [answers, setAnswers] = useState({});
 
-  const currentQuestion = classwork.questions[currentQIndex];
-  const totalQuestions = classwork.questions.length;
+  const currentQuestion = classwork?.questions?.[currentQIndex];
+  const totalQuestions = classwork?.questions?.length || 0;
 
-  // Timer
   useEffect(() => {
     if (timer <= 0) {
       handleSubmit();
@@ -57,7 +46,6 @@ export default function ClassworkScreen({ navigate }) {
   const handleSelectChoice = (choiceId) => {
     const max = currentQuestion.maxChoices || 1;
     const prev = answers[currentQuestion.id] || [];
-
     let updated;
     if (prev.includes(choiceId)) {
       updated = prev.filter(id => id !== choiceId);
@@ -69,7 +57,6 @@ export default function ClassworkScreen({ navigate }) {
       Alert.alert("Limit Reached", `You can only select ${max} option(s).`);
       return;
     }
-
     setAnswers({ ...answers, [currentQuestion.id]: updated });
   };
 
@@ -82,7 +69,6 @@ export default function ClassworkScreen({ navigate }) {
 
   const handleSubmit = async () => {
     setTimer(-1);
-
     const submission = prepareSubmission();
 
     try {
@@ -94,7 +80,6 @@ export default function ClassworkScreen({ navigate }) {
         },
         body: JSON.stringify({ answers: submission }),
       });
-      console.log( await res.json())
       if (!res.ok) throw new Error("Submission failed");
 
       Alert.alert("Submitted!", "Your answers have been recorded.", [
@@ -112,13 +97,47 @@ export default function ClassworkScreen({ navigate }) {
     ]);
   };
 
+  if (!currentQuestion) return null;
+
   const currentSelections = answers[currentQuestion.id] || [];
   const isLast = currentQIndex === totalQuestions - 1;
+
+  const imageUrl = `${serverUrl}${currentQuestion.image}`;
 
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={["#050c1f", "#08142e"]} style={styles.background} />
 
+      {/* Zoomable Image Modal */}
+      <Modal
+        visible={isFullImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsFullImage(false)}
+      >
+        <View style={styles.modalBackground}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setIsFullImage(false)}
+          >
+            <Icon name="x" size={28} color="#fff" />
+          </TouchableOpacity>
+
+          <ImageViewer
+            imageUrls={[{ url: imageUrl }]}
+            enableCenterOnPress={false}
+            enableSwipeDown={true}
+            onSwipeDown={() => setIsFullImage(false)}
+            doubleClickInterval={300}
+            maxScale={5}
+            backgroundColor="black"
+            renderHeader={() => null} // Hide default header
+            renderIndicator={() => null} // Hide page indicator (since only one image)
+          />
+        </View>
+      </Modal>
+
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.timerText}>{formatTime(timer)}</Text>
         <View style={styles.progressBox}>
@@ -127,8 +146,29 @@ export default function ClassworkScreen({ navigate }) {
         <Text style={styles.titleText}>{classwork.title}</Text>
       </View>
 
+      {/* Content */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.questionMark}>({currentQuestion.mark} mark{currentQuestion.mark > 1 ? "s" : ""})</Text>
+        <Text style={styles.questionMark}>
+          ({currentQuestion.mark} mark{currentQuestion.mark > 1 ? "s" : ""})
+        </Text>
+
+        {currentQuestion.image && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={styles.imageContainer}
+            onPress={() => setIsFullImage(true)}
+          >
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.questionImage}
+              resizeMode="contain"
+            />
+            <View style={styles.zoomBadge}>
+              <Icon name="maximize-2" size={16} color="#fff" />
+            </View>
+          </TouchableOpacity>
+        )}
+
         <Text style={styles.questionText}>{currentQuestion.question}</Text>
 
         <View style={styles.choicesContainer}>
@@ -139,6 +179,7 @@ export default function ClassworkScreen({ navigate }) {
                 key={choice.id}
                 style={[styles.choiceItem, selected && styles.choiceItemSelected]}
                 onPress={() => handleSelectChoice(choice.id)}
+                activeOpacity={0.7}
               >
                 <Text style={styles.choiceOrderText}>{choice.order}.</Text>
                 <Text style={styles.choiceText}>{choice.choice}</Text>
@@ -148,6 +189,7 @@ export default function ClassworkScreen({ navigate }) {
         </View>
       </ScrollView>
 
+      {/* Footer */}
       <View style={styles.footer}>
         <TouchableOpacity
           onPress={() => setCurrentQIndex(i => Math.max(0, i - 1))}
@@ -174,34 +216,127 @@ export default function ClassworkScreen({ navigate }) {
   );
 }
 
-// Same beautiful styles as before
+// Styles (mostly unchanged)
 const styles = StyleSheet.create({
   background: { position: "absolute", width: "100%", height: "100%" },
-  container: { flex: 1, backgroundColor: "#050c1f" },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  errorText: { color: "#fca5a5", fontSize: 18, marginBottom: 20 },
-  backBtn: { padding: 10 },
+  container: { flex: 1 },
 
-  header: { padding: 20, paddingTop: 50, alignItems: "center", borderBottomWidth: 1, borderColor: "rgba(255,255,255,0.1)" },
+  header: {
+    padding: 20,
+    paddingTop: 50,
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
   timerText: { color: "#4ade80", fontSize: 32, fontWeight: "900" },
-  progressBox: { backgroundColor: "rgba(79,142,247,0.2)", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, position: "absolute", top: 100, right: 20 },
+  progressBox: {
+    backgroundColor: "rgba(79,142,247,0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    position: "absolute",
+    top: 50,
+    right: 20,
+  },
   progressText: { color: "#60a5fa", fontWeight: "700" },
   titleText: { color: "#fff", fontSize: 20, fontWeight: "700", marginTop: 10 },
 
   scrollContent: { padding: 20, paddingBottom: 120 },
-  questionMark: { color: "rgba(190,210,255,0.7)", marginBottom: 8 },
-  questionText: { color: "#fff", fontSize: 22, fontWeight: "800", lineHeight: 32, marginBottom: 30 },
+
+  questionMark: { color: "rgba(190,210,255,0.7)", fontSize: 16, marginBottom: 12 },
+
+  imageContainer: {
+    width: "100%",
+    height: 240,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    marginBottom: 24,
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  questionImage: { width: "100%", height: "100%" },
+  zoomBadge: {
+    position: "absolute",
+    bottom: 12,
+    right: 12,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 12,
+    padding: 6,
+  },
+
+  questionText: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "800",
+    lineHeight: 32,
+    marginBottom: 30,
+  },
 
   choicesContainer: { gap: 14 },
-  choiceItem: { backgroundColor: "rgba(255,255,255,0.06)", padding: 18, borderRadius: 14, borderWidth: 2, borderColor: "rgba(255,255,255,0.1)", flexDirection: "row", alignItems: "center" },
-  choiceItemSelected: { borderColor: "#4f8ef7", backgroundColor: "rgba(79,142,247,0.15)" },
-  choiceOrderText: { color: "#60a5fa", fontWeight: "700", fontSize: 18, marginRight: 12 },
+  choiceItem: {
+    backgroundColor: "rgba(255,255,255,0.06)",
+    padding: 18,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.1)",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  choiceItemSelected: {
+    borderColor: "#4f8ef7",
+    backgroundColor: "rgba(79,142,247,0.15)",
+  },
+  choiceOrderText: {
+    color: "#60a5fa",
+    fontWeight: "700",
+    fontSize: 18,
+    marginRight: 12,
+  },
   choiceText: { color: "#fff", fontSize: 17, flex: 1 },
 
-  footer: { position: "absolute", bottom: 0, width: "100%", flexDirection: "row", justifyContent: "space-between", padding: 20, backgroundColor: "rgba(10,20,53,0.95)", borderTopWidth: 1, borderColor: "rgba(255,255,255,0.1)" },
-  navButton: { flexDirection: "row", alignItems: "center", backgroundColor: "#1d4ed8", paddingHorizontal: 20, paddingVertical: 14, borderRadius: 12 },
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 20,
+    backgroundColor: "rgba(10,20,53,0.95)",
+    borderTopWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  navButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1d4ed8",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
   navButtonDisabled: { backgroundColor: "rgba(100,116,139,0.3)" },
   navText: { color: "#fff", fontWeight: "600", marginHorizontal: 8 },
-  submitButton: { flexDirection: "row", alignItems: "center", backgroundColor: "#ef4444", paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12 },
+  submitButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ef4444",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
   submitText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+
+  modalBackground: { flex: 1, backgroundColor: "rgba(0,0,0,0.98)" },
+  closeButton: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 1000,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 30,
+    padding: 10,
+  },
 });
