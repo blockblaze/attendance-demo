@@ -1,7 +1,6 @@
 // App.js
 import React, { useEffect, useState } from "react";
 import * as SplashScreen from "expo-splash-screen";
-import * as SecureStore from "expo-secure-store";
 import LoginScreen from "./screens/LoginScreen";
 import DiscoveryScreen from "./screens/DiscoveryScreen";
 import AttendScreen from "./screens/AttendScreen";
@@ -12,6 +11,7 @@ import ClassworkScreen from "./screens/ClassworkScreen";
 import Toast from "react-native-toast-message";
 import ClassworkSnapshotScreen from "./screens/ClassworkSnapshotScreen";
 import * as NavigationBar from "expo-navigation-bar";
+import { initStorage, storage } from "./utils/Storage";
 
 
 SplashScreen.preventAutoHideAsync();
@@ -27,7 +27,8 @@ useEffect(() => {
   useEffect(() => {
     async function prepare() {
       await new Promise(r => setTimeout(r, 2000));
-      const token = await SecureStore.getItemAsync("user_token");
+      initStorage();
+      const token = await storage.get("user_token");
       setCurrentScreen(token ? "Discovery" : "Login");
       setIsReady(true);
       await SplashScreen.hideAsync();

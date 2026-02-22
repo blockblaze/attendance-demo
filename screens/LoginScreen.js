@@ -12,7 +12,7 @@ import {
   Animated,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import * as SecureStore from "expo-secure-store";
+import { storage } from "../utils/Storage";
 
 export default function LoginScreen({ setIsAuth }) {
   const passwordAnim = useRef(new Animated.Value(0)).current;
@@ -64,7 +64,7 @@ export default function LoginScreen({ setIsAuth }) {
       }
 
       // ✅ Save whole response into SecureStore
-      await SecureStore.setItemAsync("user_token", JSON.stringify(data));
+      await storage.set("user_token", JSON.stringify(data));
 
       // ✅ Notify App.js to switch screen immediately
       setIsAuth(true);

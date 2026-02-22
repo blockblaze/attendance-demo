@@ -3,9 +3,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { io } from "socket.io-client";
 import * as Network from "expo-network";
-import * as SecureStore from "expo-secure-store";
 import { signJWT } from "../jwt";
 import { useSharedState } from "../SharedState";
+import { storage } from "../utils/Storage";
 
 const SECRET = "123";
 const PORT = 3000;
@@ -29,7 +29,7 @@ export default function DiscoveryScreen({ navigate, setIsAuth }) {
   // Load user once
 useEffect(() => {
   const loadUser = async () => {
-    const raw = await SecureStore.getItemAsync("user_token");
+    const raw = await storage.get("user_token");
     if (!raw) {
       setIsAuth(false);
       return;

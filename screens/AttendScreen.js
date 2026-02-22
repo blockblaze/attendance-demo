@@ -11,7 +11,6 @@ import {
   Image,
 } from "react-native";
 import Barcode from "@kichiyaki/react-native-barcode-generator";
-import * as SecureStore from "expo-secure-store";
 import { useSharedState } from "../SharedState";
 import { signJWT } from "../jwt";   // ← You need this!
 

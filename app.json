@@ -5,7 +5,8 @@
     "version": "1.0.0",
     "platforms": [
       "android",
-      "ios"
+      "ios",
+      "web"
     ],
     "jsEngine": "hermes",
     "orientation": "portrait",
@@ -24,6 +25,17 @@
     },
     "ios": {
       "bundleIdentifier": "com.devorify.attendly"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "isHeadless": false,
+      "config": {
+        "pwa": {
+          "display": "standalone",
+          "orientation": "portrait"
+        }
+      }
     },
     "extra": {
       "eas": {
